@@ -48,12 +48,12 @@ passport.use(
   new LocalStrategy(
     {
       usernameField: "Email",
-      passwordField: "Password",
+      passwordField: "password",
     },
     (username, password, done) => {
         adminData.findOne({ where: { Email: username } })
         .then(async (user) => {
-          const result = await bcrypt.compare(password, user.Password);
+          const result = await bcrypt.compare(password, user.password);
           if (result) {
             return done(null, user);
           } else {
@@ -76,14 +76,14 @@ passport.use(
   new LocalStrategy(
     {
       usernameField: "votername",
-      passwordField: "Password",
+      passwordField: "password",
       passReqToCallback: true,
     },
     async (request, username, password, done) => {
       const election = await electionData.GetUrl(request.params.url);
       voterData.findOne({ where: { votername: username, EID: election.id } })
         .then(async (user) => {
-          const result = await bcrypt.compare(password, user.Password);
+          const result = await bcrypt.compare(password, user.password);
           if (result) {
             return done(null, user);
           } else {
@@ -155,7 +155,7 @@ app.get(
   connectEnsureLogin.ensureLoggedIn(),
   async (request, response) => {
     if (request.user.role === "admin") {
-      let Electionuser = request.user.FirstName + " " + request.user.LastName;
+      let Electionuser = request.user.firstName + " " + request.user.lastName;
       try {
         const elections = await electionData.GetElections(request.user.id);
         if (request.accepts("html")) {
@@ -190,7 +190,7 @@ app.get("/signup", (request, response) => {
 
 //Creating the Election admin account
 app.post("/admin", async (request, response) => {
-  if (!request.body.FirstName) {
+  if (!request.body.firstName) {
     request.flash("error", "Enter The First Name");
     return response.redirect("/signup");
   }
@@ -198,21 +198,21 @@ app.post("/admin", async (request, response) => {
     request.flash("error", "Enter The Email");
     return response.redirect("/signup");
   }
-  if (!request.body.Password) {
-    request.flash("error", "Enter The Password");
+  if (!request.body.password) {
+    request.flash("error", "Enter The password");
     return response.redirect("/signup");
   }
-  if (request.body.Password.length < 5) {
+  if (request.body.password.length < 5) {
     request.flash("error", "Please choose length of password atleast 5 characters");
     return response.redirect("/signup");
   }
-  const hashedPwd = await bcrypt.hash(request.body.Password, saltRounds);
+  const hashedPwd = await bcrypt.hash(request.body.password, saltRounds);
   try {
     const user = await adminData.addAdmin({
-      FirstName: request.body.firstName,
-      LastName: request.body.lastName,
+      firstName: request.body.firstName,
+      lastName: request.body.lastName,
       Email: request.body.Email,
-      Password: hashedPwd,
+      password: hashedPwd,
     });
     request.login(user, (err) => {
       if (err) {
@@ -329,7 +329,7 @@ app.post(
         return response.redirect("/reset-password");
       }
       if (request.body.new_password.length < 5) {
-        request.flash("error", "Password length should be atleast 8");
+        request.flash("error", "password length should be atleast 8");
         return response.redirect("/reset-password");
       }
       const hashedNewPwd = await bcrypt.hash(
@@ -338,7 +338,7 @@ app.post(
       );
       const result = await bcrypt.compare(
         request.body.old_password,
-        request.user.Password
+        request.user.password
       );
       if (result) {
         try {
@@ -385,6 +385,9 @@ app.post(
   connectEnsureLogin.ensureLoggedIn(),
   async (request, response) => {
     if (request.user.role === "admin") {
+      if(request.body.eName!==undefined){
+        console.log(request.body.eName.length);
+      }
       if (request.body.eName.length < 5) {
         request.flash("error", "The length of the Electionname must be atleast 3");
         return response.redirect("/elections/new");
@@ -1063,19 +1066,19 @@ app.post(
           `/elections/${request.params.EID}/voters/create`
         );
       }
-      if (!request.body.Password) {
+      if (!request.body.password) {
         request.flash("error", "Please enter correct password");
         return response.redirect(
           `/elections/${request.params.EID}/voters/create`
         );
       }
-      if (request.body.Password.length < 5) {
+      if (request.body.password.length < 5) {
         request.flash("error", "The length of password should be atleast 5");
         return response.redirect(
           `/elections/${request.params.EID}/voters/create`
         );
       }
-      const hashedPwd = await bcrypt.hash(request.body.Password, saltRounds);
+      const hashedPwd = await bcrypt.hash(request.body.password, saltRounds);
       try {
         const election = await electionData.GetElection(request.params.EID);
         if (request.user.id !== election.AID) {
@@ -1088,7 +1091,7 @@ app.post(
         }
         await voterData.createVoter({
             voterId: request.body.voterId,
-          Password: hashedPwd,
+          password: hashedPwd,
           EID: request.params.EID,
         });
         return response.redirect(
@@ -1189,11 +1192,11 @@ app.post(
   async (request, response) => {
     if (request.user.role === "admin") {
       if (!request.body.new_password) {
-        request.flash("error", "Please Enter New Password");
+        request.flash("error", "Please Enter New password");
         return response.redirect("/reset-password");
       }
       if (request.body.new_password.length < 5) {
-        request.flash("error", "Password length should be atleast 5");
+        request.flash("error", "password length should be atleast 5");
         return response.redirect("/reset-password");
       }
       const hashedNewPwd = await bcrypt.hash(
